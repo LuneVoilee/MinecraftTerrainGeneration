@@ -3,7 +3,7 @@
 #include "MinecraftDemo/Tools/NoiseTools.h"
 
 
-DEFINE_LOG_CATEGORY(LOG_PLANT);
+//DEFINE_LOG_CATEGORY(LOG_PLANT);
 #include "BiomeGenerator.h"
 #include "MinecraftDemo/Tools/HashTools.h"
 
@@ -109,8 +109,8 @@ bool PlantGenerator::GeneratorTree(Chunk& TheChunk, TMap<uint64, int32>& CubeTyp
 	TMap<uint64, int32>& CubeReadyToDisplay,int32 i,int32 j) {
 	
 	int32 biome = TheChunk.ChunkBiomeField[i][j];
-	float temperature = TheChunk.ChunkTemperatureField[i][j];
-	float humidity = TheChunk.ChunkHumidityField[i][j];
+	//float temperature = TheChunk.ChunkTemperatureField[i][j];
+	//float humidity = TheChunk.ChunkHumidityField[i][j];
 	
 	//14=温带木 15=热带木，16=寒带木
 	//17=温带树叶 18=寒带树叶，19=热带树叶
@@ -170,7 +170,7 @@ bool PlantGenerator::GeneratorTree(Chunk& TheChunk, TMap<uint64, int32>& CubeTyp
 				,FVector2D(0.75,t2)
 				,FVector2D(1,0)
 				,float(k-MinLeavesHeight)/(MaxLeavesHeight-MinLeavesHeight)).Y;
-		UE_LOG(LOG_PLANT,Log,TEXT("leafRadius[%d]:%f;t1:%d;t2:%d"),TheChunk.ChunkHeightField[i][j]+1+k,leafRadius,t1,t2);
+		//UE_LOG(LOG_PLANT,Log,TEXT("leafRadius[%d]:%f;t1:%d;t2:%d"),TheChunk.ChunkHeightField[i][j]+1+k,leafRadius,t1,t2);
 		//生成树叶
 		GenerateLeaves(TheChunk,CubeTypePool,CubeReadyToDisplay,i,j,TheChunk.ChunkHeightField[i][j]+1+k,leafRadius,LeavesType);
 

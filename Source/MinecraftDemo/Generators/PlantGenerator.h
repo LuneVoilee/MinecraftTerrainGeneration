@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "MinecraftDemo/Meshes/Chunk.h"
 #include "MinecraftDemo/Core/MinecraftGameMode.h"
-DECLARE_LOG_CATEGORY_EXTERN(LOG_PLANT, Log, All);
+//DECLARE_LOG_CATEGORY_EXTERN(LOG_PLANT, Log, All);
 
 class PlantGenerator {
 public:

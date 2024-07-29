@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <unordered_map>
+
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "MinecraftDemo/Meshes/Chunk.h"
@@ -32,13 +34,21 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayerLocation(FVector location);
 	
+
+	
+
+	TSet<uint64> DisplayedChunk={};
+
+	TMap<uint64,int32> HeightPool={};
+
+	TMap<uint64,int32> CubeTypePool={};
+
+	TMap<uint64,int32> CubeReadyToDisplay={};
+
+	TMap<uint64,int32> DisplayedCube={};
 	
 	TMap<uint64,Chunk> ChunkPool={};
-	TSet<uint64> DisplayedChunk={};
 	
-	TMap<uint64,int32> CubeTypePool={};
-	TMap<uint64,int32> CubeReadyToDisplay={};
-	TMap<uint64,int32> DisplayedCube={};
 	TArray<TTuple<uint64,int32,int32>> BuildingReadyToDisplay={};
 private:
 	//玩家所在的那个Chunk的位置

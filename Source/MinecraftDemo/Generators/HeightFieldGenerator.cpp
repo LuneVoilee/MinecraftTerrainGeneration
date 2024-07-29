@@ -1,8 +1,11 @@
 ﻿#include "HeightFieldGenerator.h"
+
+#include <unordered_map>
+
 #include "Field/FieldSystemNoiseAlgo.h"
 #include "MinecraftDemo/Tools/HashTools.h"
 
-void HeightFieldGenerator::GeneratorHeightField(Chunk& TheChunk) {
+void HeightFieldGenerator::GeneratorHeightField(Chunk& TheChunk, TMap<uint64, int32>& HeightPool) {
 	//丘陵，山脉，平地
 	//FString str=FString::Printf(TEXT("ChunkPosition:%f,%f"),TheChunk.ChunkPosition.X,TheChunk.ChunkPosition.Y);
 	//GEngine->AddOnScreenDebugMessage(0, 5.0f, FColor::Yellow, *str);
@@ -18,10 +21,12 @@ void HeightFieldGenerator::GeneratorHeightField(Chunk& TheChunk) {
 				
 				TheChunk.ChunkHeightField[i][j] += (maxHeight[d] + NoiseTools::PerlinNoise2D(paramX,paramY) * maxHeight[d])
 				* weight[d];
-
 				//UE_LOG(LogTemp,Log,TEXT("Chunk:%f,%f * HeightField[%d][%d]:%d\n"),TheChunk.ChunkPosition.X,TheChunk.ChunkPosition.Y,i,j,TheChunk.ChunkHeightField[i][j]);
 			
 			}
+			FVector2d offset = TheChunk.ChunkPosition * MaxWidth;
+			uint64 key = HashTools::Vec3HashToUint64(offset.X+i,offset.Y+j);
+			HeightPool.Add(key,TheChunk.ChunkHeightField[i][j]);
 		}
 	}
 	return;

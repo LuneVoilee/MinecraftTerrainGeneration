@@ -45,7 +45,8 @@ void AMinecraftGameMode::UpdateChunk() {
 			
 			if(!DisplayedChunk.Contains(Key)) {
 				DisplayedChunk.Emplace(Key);
-				BuildingGenerator::GenerateBuilding(ChunkPool[Key],CubeTypePool,CubeReadyToDisplay,BuildingReadyToDisplay);
+				BuildingGenerator::GenerateBuilding( HeightPool,ChunkPool[Key], CubeTypePool, CubeReadyToDisplay,
+				                                    BuildingReadyToDisplay);
 				PlantGenerator::GeneratorPlant(ChunkPool[Key],CubeTypePool,CubeReadyToDisplay);
 				DisplayChunk(ChunkPool[Key]);
 			}
@@ -55,7 +56,7 @@ void AMinecraftGameMode::UpdateChunk() {
 }
 
 void AMinecraftGameMode::LoadChunk(Chunk& TheChunk) {
-	HeightFieldGenerator::GeneratorHeightField(TheChunk);
+	HeightFieldGenerator::GeneratorHeightField(TheChunk,HeightPool);
 	TemperatureGenerator::GenerateTemperatureField(TheChunk);
 	HumidityGenerator::GenerateHumidityField(TheChunk);
 	BiomeGenerator::GenerateBiomeField(TheChunk);
