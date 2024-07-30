@@ -158,7 +158,7 @@ bool BuildingGenerator::TryToPlaceOneHouse(TMap<uint64, int32>& HeightMap,int32 
 		}
 	}
 	//DebugTools::ScreenPrint("success!!!!!!");
-	//新的问题
+	//新的问题：修改高度场以及房屋高度异常
 	averageHeight /= (size0*size1);
 	
 	for(int i = -horizontal ; i < horizontal ; i++) {
