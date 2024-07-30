@@ -30,41 +30,44 @@ void BuildingGenerator::GenerateBuildingArea(TMap<uint64, int32>& HeightMap, Chu
 	CapitalPoint =  {MaxWidth / 2 , MaxWidth / 2};
 	
 	int32 CapitalHeight = TheChunk.ChunkHeightField[CapitalPoint[0]][CapitalPoint[1]];
-	auto greater = [](std::pair<float,Point>& a,std::pair<float,Point>& b) -> bool {
+	auto greater = [](std::pair<int32,Point>& a,std::pair<int32,Point>& b) -> bool {
 		return a.first > b.first;
 	};
-	std::priority_queue<std::pair<float,Point>,std::vector<std::pair<float,Point>>,decltype(greater)> PointQueue;
+	std::priority_queue<std::pair<int32,Point>,std::vector<std::pair<int32,Point>>,decltype(greater)> PointQueue;
 	PointQueue.emplace(0,CapitalPoint);
 	
 	const int32 dx1[9] = {0,1,0,1,-1, 0,-1,-1, 1};
 	const int32 dy1[9] = {0,0,1,1, 0,-1,-1, 1,-1};
 	const int32 dx2[4] = {3,0,-3, 0};
 	const int32 dy2[4] = {0,3, 0,-3};
-	
+	int count = 0;
 	while(!PointQueue.empty()) {
-		float cost=PointQueue.top().first;
+		int32 cost=PointQueue.top().first;
 		Point point=PointQueue.top().second;
 		PointQueue.pop();
-		
+		count++;
 		
 		//以3X3的正方形为一个单位，当前的最优单位解加入域
 		for(int i = 0 ; i < 9 ; i++) {
-			UE_LOG(LogArea,Warning,TEXT("AreaPos[%d,%d]"),(int32)globalOffset.X+point[0]+dx1[i],(int32)globalOffset.Y+point[1]+dy1[i]);
-			UE_LOG(LogArea,Log,TEXT("1"));
+			//UE_LOG(LogArea,Warning,TEXT("AreaPos[%d,%d]"),(int32)globalOffset.X+point[0]+dx1[i],(int32)globalOffset.Y+point[1]+dy1[i]);
+			//UE_LOG(LogArea,Log,TEXT("1"));
 			Point tempP(globalOffset.X+point[0]+dx1[i],globalOffset.Y+point[1]+dy1[i]);
-			UE_LOG(LogArea,Log,TEXT("2"));
+			//UE_LOG(LogArea,Log,TEXT("2"));
 			Point* p = Area.Find(tempP);
-			UE_LOG(LogArea,Log,TEXT("3"));
+			//UE_LOG(LogArea,Log,TEXT("3"));
 			if(!p) {
 				Area.Emplace(tempP);
 			}
-			else {
-				UE_LOG(LogArea,Log,TEXT("wocwocwoc"));
-			}
 		}
 
-		//最小代价大于7时，放弃拓展
-		if(cost > 7) {
+		//最小代价大于5时，放弃拓展
+		if(cost > 5) {
+			//UE_LOG(LogArea,Warning,TEXT("asdf"));
+			break;
+		}
+		//最多循环30次
+		if(count>30) {
+			//UE_LOG(LogArea,Warning,TEXT("zxcv"));
 			break;
 		}
 		
@@ -76,16 +79,16 @@ void BuildingGenerator::GenerateBuildingArea(TMap<uint64, int32>& HeightMap, Chu
 			int32 gy = globalOffset.Y + point[1] + dy2[i];
 			
 			if(Area.Find({gx,gy})) {
-				//DebugTools::ScreenPrint("you");
+				//UE_LOG(LogArea,Log,TEXT("这个中心点已经在Area有了"));
 				continue;
 			}
 			else {
-				int32 CentralHeight = getHeight(HeightMap,TheChunk,gx,gy);
+				int32 CentralHeight = getHeight(HeightMap,gx,gy);
 				int32 deltaHeight = abs(CentralHeight-CapitalHeight);
-				float ThisCost = cost + deltaHeight;
+				int32 ThisCost = cost + deltaHeight;
 				PointQueue.emplace(ThisCost,Point{x,y});
 				//DebugTools::ScreenPrint("laile");
-				UE_LOG(LogArea,Log,TEXT("Four Prepare[%f,%d,%d]"),ThisCost,x,y);
+				//UE_LOG(LogArea,Log,TEXT("进队列了[%d,%d,%d]"),ThisCost,x,y);
 			}
 		}
 	}
@@ -108,7 +111,7 @@ void BuildingGenerator::DisplayBuildings(TMap<uint64, int32>& HeightMap, Chunk& 
 
 		int32 type = (int32)HashTools::NonDeterministicRandom(1,100) % 3;
 		int32 rotate = (int32)HashTools::NonDeterministicRandom(1,100) % 4;
-		if(!TryToPlaceOneHouse(HeightMap,TheChunk,buildingSize[type][0],buildingSize[type][1],type,rotate,point,CubeTypePool, BuildingReadyToDisplay)) {
+		if(!TryToPlaceOneHouse(HeightMap,buildingSize[type][0],buildingSize[type][1],type,rotate,point,CubeTypePool,BuildingReadyToDisplay)) {
 			continue;
 		}
 
@@ -123,49 +126,55 @@ void BuildingGenerator::DisplayBuildings(TMap<uint64, int32>& HeightMap, Chunk& 
 	}
 }
 
-bool BuildingGenerator::TryToPlaceOneHouse(TMap<uint64, int32>& HeightMap, Chunk& TheChunk, int32 size0, int32 size1, int32 type, int32 rotate, Point point, TMap<
+bool BuildingGenerator::TryToPlaceOneHouse(TMap<uint64, int32>& HeightMap,int32 size0, int32 size1, int32 type, int32 rotate, Point point, TMap<
                                            uint64, int32>& CubeTypePool, TArray<TTuple<uint64, int32, int32>>& BuildingReadyToDisplay) {
 	int32 rotateIndex = rotate % 2;
 	int32 horizontal, vertical;
-	rotateIndex == 0 ? horizontal = size0 , vertical = size1 : horizontal = size1 , vertical = size0 ;
-	float averageHeight = 0;
+	rotateIndex == 0 ? horizontal = size0 / 2 , vertical = size1 / 2 : horizontal = size1 / 2 , vertical = size0 / 2 ;
+	int32 averageHeight = 0;
 	for(int i = -horizontal ; i < horizontal ; i++) {
 		for(int j = -vertical ; j < vertical ; j++) {
+			int32 gx = globalOffset.X+point[0]+i;
+			int32 gy = globalOffset.Y+point[1]+j;
 			//不在发展域
-			
-			DebugTools::ScreenPrint("1");
-			
-			if(!Area.Find(Point(globalOffset.X+point[0]+i,globalOffset.Y+point[1]+j))) {
-				UE_LOG(LogArea,Warning,TEXT("can't find block in Area,PosNow is[%f,%f]"),globalOffset.X+point[0]+i,globalOffset.Y+point[1]+j)
+			if(!Area.Find(Point(gx,gy))) {
+				//UE_LOG(LogArea,Warning,TEXT("can't find block in Area,PosNow is[%d,%d]"),gx,gy)
+				//DebugTools::ScreenPrint("Area");
 				return false;
 			}
 			
+			int32 height = getHeight(HeightMap,gx,gy);
+			if(height == 0) {
+				return false;
+			}
 			//空气
-			int32 height = TheChunk.ChunkHeightField[point[0]+i][point[1]+j];
-			int* result = CubeTypePool.Find(HashTools::Vec3HashToUint64(globalOffset.X+point[0]+i,globalOffset.X+point[1]+j,height));
-			if(result&&(*result)==0){return false;}
+			int* result = CubeTypePool.Find(HashTools::Vec3HashToUint64(gx,gy,height));
+			if(result&&(*result)==0) {
+				//DebugTools::ScreenPrint("Air");
+				return false;
+			}
 			
-			DebugTools::ScreenPrint("2");
 			averageHeight += height;
 		}
 	}
-	
+	//DebugTools::ScreenPrint("success!!!!!!");
 	averageHeight /= (size0*size1);
-	averageHeight = floor(averageHeight + 0.5);
 	
 	for(int i = -horizontal ; i < horizontal ; i++) {
 		for(int j = -vertical ; j < vertical ; j++) {
-			setHeight(HeightMap,TheChunk,point[0]+i,point[1]+j,averageHeight);
-			TheChunk.ChunkHeightField[point[0]+i][point[1]+j] = averageHeight;
-			Area.Remove(Point(globalOffset.X+point[0]+i,globalOffset.Y+point[1]+j));
+			int gx = globalOffset.X+point[0]+i,gy = globalOffset.Y+point[1]+j;
+			setHeight(HeightMap,gx,gy,averageHeight);
+			Area.Remove(Point(gx,gy));
 		}
 	}
 
 	//插入空气，以免生成树木花草
-	for(int i=-horizontal-1;i<horizontal+1;++i)
-		for(int j=-vertical-1;j<vertical+1;++j)
+	for(int i=-horizontal-3;i<horizontal+3;++i)
+		for(int j=-vertical-3;j<vertical+3;++j)
 		{
-			uint64 index = HashTools::Vec3HashToUint64(globalOffset.X+point[0]+i,globalOffset.Y+point[1]+j,TheChunk.ChunkHeightField[point[0]+i][point[1]+j]+1);
+			int gx = globalOffset.X+point[0]+i,gy = globalOffset.Y+point[1]+j;
+			int32 height = getHeight(HeightMap,gx,gy)+1;
+			uint64 index = HashTools::Vec3HashToUint64(gx,gy,height);
 			if(CubeTypePool.Find(index)) {
 				CubeTypePool[index] = 0;
 			}
@@ -175,6 +184,7 @@ bool BuildingGenerator::TryToPlaceOneHouse(TMap<uint64, int32>& HeightMap, Chunk
 		}
 	
 	BuildingReadyToDisplay.Emplace(HashTools::Vec3HashToUint64(globalOffset.X+point[0],globalOffset.Y+point[1],averageHeight+1),type+1,rotate);
+	UE_LOG(LogArea,Log,TEXT("aaaassss fromheight:%d"),averageHeight+1);
 	Area.Emplace(Point(globalOffset.X+point[0]-horizontal,globalOffset.Y+point[1]-vertical));
 	BuildingPoint.Push(FVector2D(point[0]-horizontal,point[1]-vertical));
 	return true;
@@ -185,7 +195,7 @@ void BuildingGenerator::DisplayPath(Chunk& TheChunk, TMap<uint64, int32>& CubeTy
                                     TMap<uint64, int32>& CubeReadyToDisplay) {
 }
 
-int32 BuildingGenerator::getHeight(TMap<uint64, int32>& HeightMap, const Chunk& TheChunk, int32 gx, int32 gy) {
+int32 BuildingGenerator::getHeight(TMap<uint64, int32>& HeightMap,int32 gx, int32 gy) {
 	try {
 		uint64 key = HashTools::Vec3HashToUint64(gx,gy);
 		int32* p = HeightMap.Find(key);
@@ -193,17 +203,18 @@ int32 BuildingGenerator::getHeight(TMap<uint64, int32>& HeightMap, const Chunk& 
 			return *p;
 		}
 		else {
-			DebugTools::ScreenPrint("sb2");
+			//UE_LOG(LogArea,Log,TEXT("cant get height"));
+			//Tools::ScreenPrint("sb1");
 			return 0;
 		}
 	}
 	catch (...) {
-		UE_LOG(LogArea,Error,TEXT("gx:%d,gy:%d"),gx,gy);
+		//UE_LOG(LogArea,Error,TEXT("gx:%d,gy:%d"),gx,gy);
 	}
-	
+	return 40;
 }
 
-void BuildingGenerator::setHeight(TMap<uint64, int32>& HeightMap, const Chunk& TheChunk, int32 gx, int32 gy,
+void BuildingGenerator::setHeight(TMap<uint64, int32>& HeightMap,int32 gx, int32 gy,
                                   int32 value) {
 	
 	uint64 key = HashTools::Vec3HashToUint64(gx,gy);
@@ -213,7 +224,7 @@ void BuildingGenerator::setHeight(TMap<uint64, int32>& HeightMap, const Chunk& T
 		*p = value;
 	}
 	else {
-		DebugTools::ScreenPrint("sb2");
+		//DebugTools::ScreenPrint("sb2");
 	}
 	
 }

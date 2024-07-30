@@ -108,21 +108,20 @@ int32 AMinecraftGameMode::CalculateCubeType(int32 Depth,Chunk& TheChunk,int i,in
 
 
 void AMinecraftGameMode::DisplayChunk(Chunk& TheChunk) {
-	  
+
+	 FVector2d offset = TheChunk.ChunkPosition*MaxWidth;
 	  for(int i = 0;i < MaxWidth;i++) {
 	  	for(int j = 0;j < MaxWidth;j++) {
 	  		for(int depth = 0;depth <= CubeMaxDepth;depth++) {
 	  			
-	  			int32 Height = TheChunk.ChunkHeightField[i][j]-depth;
-	  			int32 Type = CalculateCubeType(depth,TheChunk,i,j);
-	  			uint64 CubePosKey = HashTools::Vec3HashToUint64(
-	  				TheChunk.ChunkPosition.X*MaxWidth+i,
-	  				TheChunk.ChunkPosition.Y*MaxWidth+j,
-	  				Height
-	  			);
+	  			uint64 key = HashTools::Vec3HashToUint64(offset.X+i,offset.Y+j);
+	  			int32 realHeight = *HeightPool.Find(key);
 	  			
-	  			if(CubeTypePool.Contains(CubePosKey)) {
-	  				CubeReadyToDisplay.Emplace(CubePosKey,Type);
+	  			key = HashTools::Vec3HashToUint64(offset.X+i,offset.Y+j,realHeight-depth);
+	  			int32 Type = CalculateCubeType(depth,TheChunk,i,j);
+	  			
+	  			if(CubeTypePool.Contains(key)) {
+	  				CubeReadyToDisplay.Emplace(key,Type);
 	  			}
 	  			
 	  		}
@@ -192,7 +191,7 @@ void AMinecraftGameMode::GenerateBuildingBlocks(){
 		uint64 posIndex = tuple.Get<0>();
 		int32 buildingIndex = tuple.Get<1>();
 		int32 rotate = tuple.Get<2>();
-		UE_LOG(LogTemp,Log,TEXT("Count:%d,PosIndex:%llu,Type:%d"),count,posIndex,buildingIndex);
+		//UE_LOG(LogTemp,Log,TEXT("Count:%d,PosIndex:%llu,Type:%d"),count,posIndex,buildingIndex);
 		CreateBuilding(buildingIndex,rotate,HashTools::Uint64UnhashToVec3(posIndex));
 	} 
 
@@ -202,6 +201,7 @@ void AMinecraftGameMode::GenerateBuildingBlocks(){
 bool AMinecraftGameMode::CreateBuilding(int32 id,int32 rotate, FVector pos){
 	FString str = TEXT("Blueprint'/Game/Blueprints/BP_Building") + FString::FromInt(id)+TEXT(".BP_Building")+ FString::FromInt(id)+ TEXT("_C'");
 	UClass* BPClass = LoadClass<AActor>(nullptr, *str);
+	UE_LOG(LogArea,Log,TEXT("aaaassss out height:%d"),(int32)pos.Z);
 	AActor* spawnActor = GetWorld()->SpawnActor<AActor>(BPClass,pos*100+FVector(-50,-50,0), FRotator(0,rotate*90,0));
 
 	return spawnActor!=nullptr;
