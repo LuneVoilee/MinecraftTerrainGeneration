@@ -61,7 +61,7 @@ void BuildingGenerator::GenerateBuildingArea(TMap<uint64, int32>& HeightMap, Chu
 		}
 
 		//最小代价大于5时，放弃拓展
-		if(cost > 5) {
+		if(cost > 3) {
 			//UE_LOG(LogArea,Warning,TEXT("asdf"));
 			break;
 		}
@@ -132,6 +132,8 @@ bool BuildingGenerator::TryToPlaceOneHouse(TMap<uint64, int32>& HeightMap,int32 
 	int32 horizontal, vertical;
 	rotateIndex == 0 ? horizontal = size0 / 2 , vertical = size1 / 2 : horizontal = size1 / 2 , vertical = size0 / 2 ;
 	int32 averageHeight = 0;
+	TMap<uint64,int32> tempMap = HeightMap;
+	std::vector<int32> temp;
 	for(int i = -horizontal ; i < horizontal ; i++) {
 		for(int j = -vertical ; j < vertical ; j++) {
 			int32 gx = globalOffset.X+point[0]+i;
@@ -144,9 +146,10 @@ bool BuildingGenerator::TryToPlaceOneHouse(TMap<uint64, int32>& HeightMap,int32 
 			}
 			
 			int32 height = getHeight(HeightMap,gx,gy);
-			if(height == 0) {
+			if(height == INT_MIN) {
 				return false;
 			}
+			temp.push_back(height);
 			//空气
 			int* result = CubeTypePool.Find(HashTools::Vec3HashToUint64(gx,gy,height));
 			if(result&&(*result)==0) {
@@ -157,14 +160,25 @@ bool BuildingGenerator::TryToPlaceOneHouse(TMap<uint64, int32>& HeightMap,int32 
 			averageHeight += height;
 		}
 	}
-	//DebugTools::ScreenPrint("success!!!!!!");
-	//新的问题：修改高度场以及房屋高度异常
+	//新的问题：问题就在averageHeight。
 	averageHeight /= (size0*size1);
+	if(averageHeight>=40) {
+		temp.push_back(averageHeight);
+		for(int32 i:temp) {
+			UE_LOG(LogArea,Log,TEXT("vec:%d"),i);
+		}
+		UE_LOG(LogArea,Log,TEXT("over"));
+	}
+	
 	
 	for(int i = -horizontal ; i < horizontal ; i++) {
 		for(int j = -vertical ; j < vertical ; j++) {
 			int gx = globalOffset.X+point[0]+i,gy = globalOffset.Y+point[1]+j;
-			setHeight(HeightMap,gx,gy,averageHeight);
+			bool isSetSuccess = setHeight(HeightMap,gx,gy,averageHeight);
+			if(!isSetSuccess) {
+				HeightMap = tempMap;
+				return false;
+			}
 			Area.Remove(Point(gx,gy));
 		}
 	}
@@ -175,6 +189,9 @@ bool BuildingGenerator::TryToPlaceOneHouse(TMap<uint64, int32>& HeightMap,int32 
 		{
 			int gx = globalOffset.X+point[0]+i,gy = globalOffset.Y+point[1]+j;
 			int32 height = getHeight(HeightMap,gx,gy)+1;
+			if(height == INT_MIN+1) {
+				return false;
+			}
 			uint64 index = HashTools::Vec3HashToUint64(gx,gy,height);
 			if(CubeTypePool.Find(index)) {
 				CubeTypePool[index] = 0;
@@ -183,9 +200,9 @@ bool BuildingGenerator::TryToPlaceOneHouse(TMap<uint64, int32>& HeightMap,int32 
 				CubeTypePool.Emplace(index,0);
 			}
 		}
-	
+
 	BuildingReadyToDisplay.Emplace(HashTools::Vec3HashToUint64(globalOffset.X+point[0],globalOffset.Y+point[1],averageHeight+1),type+1,rotate);
-	UE_LOG(LogArea,Log,TEXT("aaaassss fromheight:%d"),averageHeight+1);
+	//UE_LOG(LogArea,Log,TEXT("aaaassss fromheight:%d"),averageHeight+1);
 	Area.Emplace(Point(globalOffset.X+point[0]-horizontal,globalOffset.Y+point[1]-vertical));
 	BuildingPoint.Push(FVector2D(point[0]-horizontal,point[1]-vertical));
 	return true;
@@ -197,7 +214,7 @@ void BuildingGenerator::DisplayPath(Chunk& TheChunk, TMap<uint64, int32>& CubeTy
 }
 
 int32 BuildingGenerator::getHeight(TMap<uint64, int32>& HeightMap,int32 gx, int32 gy) {
-	try {
+
 		uint64 key = HashTools::Vec3HashToUint64(gx,gy);
 		int32* p = HeightMap.Find(key);
 		if(p) {
@@ -206,16 +223,11 @@ int32 BuildingGenerator::getHeight(TMap<uint64, int32>& HeightMap,int32 gx, int3
 		else {
 			//UE_LOG(LogArea,Log,TEXT("cant get height"));
 			//Tools::ScreenPrint("sb1");
-			return 0;
+			return INT_MIN;
 		}
-	}
-	catch (...) {
-		//UE_LOG(LogArea,Error,TEXT("gx:%d,gy:%d"),gx,gy);
-	}
-	return 40;
 }
 
-void BuildingGenerator::setHeight(TMap<uint64, int32>& HeightMap,int32 gx, int32 gy,
+bool BuildingGenerator::setHeight(TMap<uint64, int32>& HeightMap, int32 gx, int32 gy,
                                   int32 value) {
 	
 	uint64 key = HashTools::Vec3HashToUint64(gx,gy);
@@ -223,9 +235,10 @@ void BuildingGenerator::setHeight(TMap<uint64, int32>& HeightMap,int32 gx, int32
 	int32* p = HeightMap.Find(key);
 	if(p) {
 		*p = value;
+		return true;
 	}
 	else {
-		//DebugTools::ScreenPrint("sb2");
+		return false;
 	}
 	
 }

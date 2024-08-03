@@ -4,6 +4,7 @@
 #include "MinecraftGameMode.h"
 #include "SkeletalMeshAttributes.h"
 #include "..\Generators\BiomeGenerator.h"
+#include "Components/TextRenderComponent.h"
 #include "MinecraftDemo/Generators/BuildingGenerator.h"
 #include "MinecraftDemo/Generators/HeightFieldGenerator.h"
 #include "MinecraftDemo/Generators/HumidityGenerator.h"
@@ -201,8 +202,12 @@ void AMinecraftGameMode::GenerateBuildingBlocks(){
 bool AMinecraftGameMode::CreateBuilding(int32 id,int32 rotate, FVector pos){
 	FString str = TEXT("Blueprint'/Game/Blueprints/BP_Building") + FString::FromInt(id)+TEXT(".BP_Building")+ FString::FromInt(id)+ TEXT("_C'");
 	UClass* BPClass = LoadClass<AActor>(nullptr, *str);
-	UE_LOG(LogArea,Log,TEXT("aaaassss out height:%d"),(int32)pos.Z);
+	//UE_LOG(LogArea,Log,TEXT("aaaassss out height:%d"),(int32)pos.Z);
 	AActor* spawnActor = GetWorld()->SpawnActor<AActor>(BPClass,pos*100+FVector(-50,-50,0), FRotator(0,rotate*90,0));
-
+    UTextRenderComponent* TextRenderComp = spawnActor->FindComponentByClass<UTextRenderComponent>();
+	if (TextRenderComp){
+		TextRenderComp->SetText(FText::FromString(FString::SanitizeFloat((pos*100).Z)));
+	}
+	
 	return spawnActor!=nullptr;
 }

@@ -48,7 +48,7 @@ public:
 private:
 	static void DisplayPath(Chunk& TheChunk,TMap<uint64, int32>& CubeTypePool,TMap<uint64, int32>& CubeReadyToDisplay);
 	static int32 getHeight(TMap<uint64, int32>& HeightMap, int32 gx, int32 gy);
-	static void setHeight(TMap<uint64, int32>& HeightMap, int32 gx, int32 gy, int32 value);
+	static bool setHeight(TMap<uint64, int32>& HeightMap, int32 gx, int32 gy, int32 value);
 	static void GenerateBuildingArea(TMap<uint64,int32>& HeightMap,Chunk& TheChunk,TMap<uint64, int32>& CubeTypePool,TMap<uint64, int32>& CubeReadyToDisplay);
 	static void DisplayBuildings( TMap<uint64,int32>& HeightMap,Chunk& TheChunk, TMap<uint64, int32>& CubeTypePool, TMap<uint64, int32>&
 	                             CubeReadyToDisplay, TArray<TTuple<uint64, int32, int32>>& BuildingReadyToDisplay);
